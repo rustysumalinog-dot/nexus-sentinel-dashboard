@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { BootSplash } from "@/components/boot-splash";
 
 type Theme = "light" | "dark";
 
@@ -14,6 +15,7 @@ interface AppState {
 const AppContext = createContext<AppState | null>(null);
 
 const THEME_KEY = "sentinel:theme";
+const BOOT_KEY = "sentinel:boot-shown";
 
 function readInitialTheme(): Theme {
   // Sentinel defaults to dark (SOC command-center aesthetic).
@@ -27,10 +29,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>("light");
   const [search, setSearch] = useState("");
   const [hydrated, setHydrated] = useState(false);
+  const [showBoot, setShowBoot] = useState(false);
 
   useEffect(() => {
     setTheme(readInitialTheme());
     setHydrated(true);
+
+    // Show boot splash once per browser session.
+    try {
+      const seen = window.sessionStorage.getItem(BOOT_KEY);
+      if (!seen) setShowBoot(true);
+    } catch {
+      setShowBoot(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -47,12 +58,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setTheme((t) => (t === "dark" ? "light" : "dark"));
   }, []);
 
+  const handleBootDone = useCallback(() => {
+    try {
+      window.sessionStorage.setItem(BOOT_KEY, "1");
+    } catch {
+      /* sessionStorage may be unavailable in private mode */
+    }
+    setShowBoot(false);
+  }, []);
+
   const value = useMemo<AppState>(
     () => ({ theme, toggleTheme, search, setSearch }),
     [theme, toggleTheme, search]
   );
 
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+  return (
+    <AppContext.Provider value={value}>
+      {showBoot && <BootSplash onDone={handleBootDone} />}
+      {children}
+    </AppContext.Provider>
+  );
 }
 
 export function useApp(): AppState {

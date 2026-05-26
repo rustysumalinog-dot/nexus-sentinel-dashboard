@@ -186,7 +186,7 @@ export const assets: Asset[] = [
   { id: "AST-002", name: "Islaura Hotel — Siargao", kind: "website", url: "https://islaura.vercel.app", status: "operational", uptime30d: 99.92, lastCheckedAt: "live", responseMs: null, tier: "critical", region: "Vercel Edge / SIN", liveCheck: true },
   { id: "AST-003", name: "Islaura Resort — El Nido", kind: "website", url: "https://islaura-resort.vercel.app", status: "operational", uptime30d: 99.88, lastCheckedAt: "live", responseMs: null, tier: "critical", region: "Vercel Edge / SIN", liveCheck: true },
   // Other monitored assets (mock)
-  { id: "AST-004", name: "Portfolio Website", kind: "website", url: "https://rustysumalinog.dev", status: "unknown", uptime30d: 0, lastCheckedAt: "—", responseMs: null, tier: "important", region: "Pending deploy", notes: "Domain reserved, deploy pending" },
+  { id: "AST-004", name: "Portfolio — Rusty Sumalinog", kind: "website", url: "https://rustysumalinog.onrender.com", status: "operational", uptime30d: 99.6, lastCheckedAt: "live", responseMs: null, tier: "important", region: "Render / Free tier", notes: "Live pinged · analytics not yet installed (mock visitors)", liveCheck: true },
   { id: "AST-005", name: "n8n Instance", kind: "vps", url: "https://n8n.rustysumalinog.dev", status: "operational", uptime30d: 99.74, lastCheckedAt: "2m ago", responseMs: 184, tier: "critical", region: "Hostinger VPS / SG", notes: "16 active workflows · 482 executions today" },
   { id: "AST-006", name: "Supabase Project — Dzong", kind: "api", url: "https://api.supabase.com", status: "operational", uptime30d: 99.99, lastCheckedAt: "1m ago", responseMs: 92, tier: "critical", region: "Supabase SIN", notes: "Pro tier · PITR enabled" },
   { id: "AST-007", name: "Anthropic API (Claude)", kind: "api", url: "https://api.anthropic.com", status: "operational", uptime30d: 99.97, lastCheckedAt: "1m ago", responseMs: 248, tier: "critical", region: "Global edge" },
@@ -201,6 +201,7 @@ export const visitorStats: VisitorStat[] = [
   { site: "Dzong Cafe & Grill", visitorsToday: 684, visitors7d: 4128, pageviewsToday: 1842, avgDurationSec: 218, bounceRate: 32, topCountry: "Philippines", topReferrer: "LinkedIn", deltaPct: 18.4 },
   { site: "Islaura Hotel — Siargao", visitorsToday: 612, visitors7d: 3284, pageviewsToday: 1496, avgDurationSec: 196, bounceRate: 28, topCountry: "Philippines", topReferrer: "Direct", deltaPct: 24.6 },
   { site: "Islaura Resort — El Nido", visitorsToday: 546, visitors7d: 2980, pageviewsToday: 1248, avgDurationSec: 248, bounceRate: 24, topCountry: "United States", topReferrer: "LinkedIn", deltaPct: 32.1 },
+  { site: "Portfolio — Rusty Sumalinog", visitorsToday: 0, visitors7d: 0, pageviewsToday: 0, avgDurationSec: 0, bounceRate: 0, topCountry: "—", topReferrer: "—", deltaPct: 0 },
 ];
 
 export const topCountries: GeoVisitor[] = [

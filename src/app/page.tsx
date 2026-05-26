@@ -138,8 +138,8 @@ export default function OverviewPage() {
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {[1, 2, 3].map((i) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="p-4 rounded-lg bg-background border border-border space-y-2">
                   <div className="skeleton h-4 w-2/3 rounded" />
                   <div className="skeleton h-6 w-1/2 rounded" />
@@ -148,7 +148,7 @@ export default function OverviewPage() {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {(live ?? []).map((r) => (
                 <div key={r.id} className="p-4 rounded-lg bg-background border border-border">
                   <div className="flex items-center justify-between mb-2">

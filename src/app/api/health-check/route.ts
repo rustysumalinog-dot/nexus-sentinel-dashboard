@@ -6,6 +6,7 @@ const TARGETS = [
   { id: "AST-001", name: "Dzong Cafe & Grill", url: "https://dzong.vercel.app" },
   { id: "AST-002", name: "Islaura Hotel — Siargao", url: "https://islaura.vercel.app" },
   { id: "AST-003", name: "Islaura Resort — El Nido", url: "https://islaura-resort.vercel.app" },
+  { id: "AST-004", name: "Portfolio — Rusty Sumalinog", url: "https://rustysumalinog.onrender.com" },
 ];
 
 interface HealthResult {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Topbar } from "@/components/topbar";
 import { KpiCard } from "@/components/kpi-card";
 import { SortableTH } from "@/components/sortable-th";
@@ -8,9 +8,18 @@ import { useApp } from "@/lib/app-provider";
 import { useTableSort } from "@/lib/use-table-sort";
 import { githubRepos, brandMentions, type BrandMention } from "@/lib/mock-data";
 import { cn, formatNumber } from "@/lib/utils";
-import { GitFork, Star, Eye, Globe, ExternalLink, ShieldAlert, FileWarning, GitBranch } from "lucide-react";
+import { GitFork, Star, Eye, Globe, ExternalLink, ShieldAlert, FileWarning, GitBranch, Wifi } from "lucide-react";
 
 type MKey = "detectedAt" | "source" | "sentiment" | "status" | "matchedTerm" | "similarityScore";
+
+interface LiveRepo {
+  name: string;
+  url: string;
+  stars: number;
+  forks: number;
+  watchers: number;
+  pushedAt: string;
+}
 
 const sentimentStyles: Record<string, string> = {
   positive: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
@@ -48,6 +57,48 @@ const statusOrder: Record<string, number> = { new: 0, investigating: 1, "dmca-fi
 
 export default function ProtectionPage() {
   const { search } = useApp();
+  const [liveRepos, setLiveRepos] = useState<Record<string, LiveRepo>>({});
+  const [ghLive, setGhLive] = useState<"loading" | "live" | "offline">("loading");
+  const [ghFetchedAt, setGhFetchedAt] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/github-stats", { cache: "no-store" });
+        const data = await res.json();
+        if (cancelled) return;
+        if (data.ok && Array.isArray(data.repos)) {
+          const map: Record<string, LiveRepo> = {};
+          for (const r of data.repos as LiveRepo[]) map[r.name] = r;
+          setLiveRepos(map);
+          setGhLive("live");
+          setGhFetchedAt(new Date(data.fetchedAt).toLocaleTimeString("en-PH", { timeZone: "Asia/Manila", hour12: false }));
+        } else {
+          setGhLive("offline");
+        }
+      } catch {
+        if (!cancelled) setGhLive("offline");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Merge live GitHub data over the static repo list (keeps suspicious-fork heuristics).
+  const repos = useMemo(() => {
+    return githubRepos.map((r) => {
+      const live = liveRepos[r.name];
+      if (!live) return r;
+      return {
+        ...r,
+        stars: live.stars,
+        forks: live.forks,
+        watchers: live.watchers,
+        lastPush: live.pushedAt.slice(0, 10),
+        isLive: true as const,
+      };
+    });
+  }, [liveRepos]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -77,9 +128,9 @@ export default function ProtectionPage() {
 
   const impersonations = brandMentions.filter((m) => m.sentiment === "impersonation" && m.status !== "resolved" && m.status !== "false-positive").length;
   const newMentions = brandMentions.filter((m) => m.status === "new").length;
-  const totalForks = githubRepos.reduce((s, r) => s + r.forks, 0);
-  const suspiciousForks = githubRepos.reduce((s, r) => s + r.suspiciousForks.length, 0);
-  const totalStars = githubRepos.reduce((s, r) => s + r.stars, 0);
+  const totalForks = repos.reduce((s, r) => s + r.forks, 0);
+  const suspiciousForks = repos.reduce((s, r) => s + r.suspiciousForks.length, 0);
+  const totalStars = repos.reduce((s, r) => s + r.stars, 0);
 
   return (
     <>
@@ -124,15 +175,30 @@ export default function ProtectionPage() {
         )}
 
         <div className="bg-card border border-border rounded-xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-border">
-            <h2 className="font-semibold text-lg text-foreground flex items-center gap-2">
-              <GitBranch size={18} className="text-sentinel-cyan" />
-              GitHub repository pulse
-            </h2>
-            <p className="text-xs text-muted">{githubRepos.length} repos monitored · {totalForks} total forks · {suspiciousForks} flagged</p>
+          <div className="px-6 py-4 border-b border-border flex items-start justify-between gap-3 flex-wrap">
+            <div>
+              <h2 className="font-semibold text-lg text-foreground flex items-center gap-2">
+                <GitBranch size={18} className="text-sentinel-cyan" />
+                GitHub repository pulse
+              </h2>
+              <p className="text-xs text-muted">{repos.length} repos monitored · {totalForks} total forks · {totalStars} stars · {suspiciousForks} flagged</p>
+            </div>
+            <span
+              className={cn(
+                "text-[10px] uppercase tracking-wider px-2 py-1 rounded-full font-bold font-mono inline-flex items-center gap-1.5",
+                ghLive === "live" && "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
+                ghLive === "loading" && "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300",
+                ghLive === "offline" && "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
+              )}
+            >
+              <Wifi size={11} />
+              {ghLive === "live" && `Live · GitHub API${ghFetchedAt ? ` · ${ghFetchedAt}` : ""}`}
+              {ghLive === "loading" && "Fetching live data..."}
+              {ghLive === "offline" && "Cached (API rate-limited)"}
+            </span>
           </div>
           <ul className="divide-y divide-border">
-            {githubRepos.map((repo) => (
+            {repos.map((repo) => (
               <li key={repo.name} className="px-6 py-4 hover:bg-background/60">
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div className="flex-1 min-w-0">

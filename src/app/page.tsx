@@ -9,6 +9,7 @@ import { PostureGauge } from "@/components/charts/posture-gauge";
 import { SeverityDonut } from "@/components/charts/severity-donut";
 import { EventTicker } from "@/components/event-ticker";
 import { ThreatHeatStrip } from "@/components/threat-heat-strip";
+import { AuditTrail } from "@/components/audit-trail";
 import {
   todayKPIs,
   weekVisitors,
@@ -336,6 +337,8 @@ export default function OverviewPage() {
             </div>
           </div>
         </div>
+
+        <AuditTrail />
       </main>
     </>
   );

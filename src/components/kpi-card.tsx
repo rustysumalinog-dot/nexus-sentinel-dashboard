@@ -1,5 +1,28 @@
+"use client";
+
 import { TrendingDown, TrendingUp, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCountUp } from "@/lib/use-count-up";
+
+interface KpiCardProps {
+  label: string;
+  value: string;
+  delta?: number;
+  icon: LucideIcon;
+  hint?: string;
+  invertDelta?: boolean;
+  /** When provided, the value animates 0 → countTo on mount. */
+  countTo?: number;
+  /** Formats the animated number into the displayed string. */
+  format?: (n: number) => string;
+  /** Adds a glowing accent border + icon treatment (use for alert/critical cards). */
+  alert?: boolean;
+}
+
+function AnimatedValue({ countTo, format }: { countTo: number; format: (n: number) => string }) {
+  const v = useCountUp(countTo);
+  return <span className="tabular-nums">{format(v)}</span>;
+}
 
 export function KpiCard({
   label,
@@ -8,26 +31,42 @@ export function KpiCard({
   icon: Icon,
   hint,
   invertDelta = false,
-}: {
-  label: string;
-  value: string;
-  delta?: number;
-  icon: LucideIcon;
-  hint?: string;
-  invertDelta?: boolean;
-}) {
+  countTo,
+  format,
+  alert = false,
+}: KpiCardProps) {
   const isPositive = delta !== undefined && (invertDelta ? delta < 0 : delta > 0);
   const isNegative = delta !== undefined && (invertDelta ? delta > 0 : delta < 0);
 
   return (
-    <div className="bg-card border border-border rounded-xl p-5 flex flex-col gap-3">
+    <div
+      className={cn(
+        "bg-card border rounded-xl p-5 flex flex-col gap-3 transition-colors",
+        alert
+          ? "border-red-400/50 dark:border-red-500/40 shadow-[0_0_0_1px_rgba(239,68,68,0.15)]"
+          : "border-border"
+      )}
+    >
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-muted">{label}</span>
-        <div className="w-9 h-9 rounded-lg bg-sentinel-cyan/10 text-sentinel-cyan flex items-center justify-center">
+        <div
+          className={cn(
+            "w-9 h-9 rounded-lg flex items-center justify-center",
+            alert
+              ? "bg-red-500/10 text-red-500"
+              : "bg-sentinel-cyan/10 text-sentinel-cyan"
+          )}
+        >
           <Icon size={18} />
         </div>
       </div>
-      <div className="text-2xl font-bold text-foreground">{value}</div>
+      <div className="text-2xl font-bold text-foreground">
+        {countTo !== undefined && format ? (
+          <AnimatedValue countTo={countTo} format={format} />
+        ) : (
+          value
+        )}
+      </div>
       <div className="flex items-center gap-2 text-xs">
         {delta !== undefined && (
           <span

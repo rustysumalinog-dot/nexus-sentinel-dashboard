@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Topbar } from "@/components/topbar";
 import { KpiCard } from "@/components/kpi-card";
 import { SortableTH } from "@/components/sortable-th";
+import { IncidentDrawer } from "@/components/incident-drawer";
+import { ThreatHeatStrip } from "@/components/threat-heat-strip";
 import { useApp } from "@/lib/app-provider";
 import { useTableSort } from "@/lib/use-table-sort";
 import { threats, todayKPIs, type ThreatEvent } from "@/lib/mock-data";
@@ -39,6 +41,7 @@ const statusOrder: Record<string, number> = { open: 0, investigating: 1, mitigat
 
 export default function ThreatsPage() {
   const { search } = useApp();
+  const [selected, setSelected] = useState<ThreatEvent | null>(null);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -155,12 +158,19 @@ export default function ThreatsPage() {
           </div>
         </div>
 
+        <div className="bg-card border border-border rounded-xl p-6">
+          <h2 className="font-semibold text-lg text-foreground mb-1">Threat activity by hour</h2>
+          <p className="text-xs text-muted mb-4">24h distribution of detected events — overnight peak typical of automated scanners</p>
+          <ThreatHeatStrip />
+        </div>
+
         <div className="bg-card border border-border rounded-xl overflow-hidden">
           <div className="px-6 py-4 border-b border-border">
             <h2 className="font-semibold text-lg text-foreground">Event log</h2>
             <p className="text-xs text-muted">
               {formatNumber(sorted.length)} of {formatNumber(threats.length)} events
               {search && ` · filtered by "${search}"`}
+              {" · "}<span className="text-sentinel-cyan">click a row for forensic detail</span>
             </p>
           </div>
           <div className="overflow-x-auto">
@@ -187,7 +197,11 @@ export default function ThreatsPage() {
                   </tr>
                 ) : (
                   sorted.map((t) => (
-                    <tr key={t.id} className="hover:bg-background/60">
+                    <tr
+                      key={t.id}
+                      onClick={() => setSelected(t)}
+                      className="hover:bg-sentinel-cyan/5 cursor-pointer transition-colors"
+                    >
                       <td className="px-6 py-3">
                         <span className={cn("text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full font-bold font-mono border", severityStyles[t.severity])}>
                           {t.severity}
@@ -217,6 +231,8 @@ export default function ThreatsPage() {
           </div>
         </div>
       </main>
+
+      <IncidentDrawer event={selected} onClose={() => setSelected(null)} />
     </>
   );
 }

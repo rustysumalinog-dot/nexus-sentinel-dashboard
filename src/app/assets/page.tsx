@@ -6,9 +6,10 @@ import { KpiCard } from "@/components/kpi-card";
 import { SortableTH } from "@/components/sortable-th";
 import { useApp } from "@/lib/app-provider";
 import { useTableSort } from "@/lib/use-table-sort";
-import { assets, apiUsage, vulnerabilities, type Asset } from "@/lib/mock-data";
+import { assets, apiUsage, vulnerabilities, uptimeHistory, vpsResources, vpsMeta, sslCerts, type Asset } from "@/lib/mock-data";
+import { Sparkline } from "@/components/charts/sparkline";
 import { cn, formatNumber } from "@/lib/utils";
-import { ServerCog, CheckCircle2, AlertTriangle, ServerCrash, Activity, Cpu } from "lucide-react";
+import { ServerCog, CheckCircle2, AlertTriangle, ServerCrash, Activity, Cpu, ShieldCheck, Lock, Server, HardDrive, Wifi, MemoryStick } from "lucide-react";
 
 type AKey = "name" | "kind" | "status" | "uptime30d" | "responseMs" | "tier" | "region";
 
@@ -153,6 +154,7 @@ export default function AssetsPage() {
                   <SortableTH field="kind" active={sort.key} dir={sort.dir} onToggle={toggle}>Type</SortableTH>
                   <SortableTH field="status" active={sort.key} dir={sort.dir} onToggle={toggle}>Status</SortableTH>
                   <SortableTH field="responseMs" active={sort.key} dir={sort.dir} onToggle={toggle} align="right">Response</SortableTH>
+                  <th className="text-left px-6 py-3 font-semibold w-28">Latency 24h</th>
                   <SortableTH field="uptime30d" active={sort.key} dir={sort.dir} onToggle={toggle} align="right">Uptime 30d</SortableTH>
                   <SortableTH field="tier" active={sort.key} dir={sort.dir} onToggle={toggle}>Tier</SortableTH>
                   <SortableTH field="region" active={sort.key} dir={sort.dir} onToggle={toggle}>Region</SortableTH>
@@ -161,7 +163,7 @@ export default function AssetsPage() {
               <tbody className="divide-y divide-border">
                 {sorted.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-10 text-center text-muted text-sm">
+                    <td colSpan={8} className="px-6 py-10 text-center text-muted text-sm">
                       Walang asset na tugma sa &ldquo;{search}&rdquo;.
                     </td>
                   </tr>
@@ -188,6 +190,15 @@ export default function AssetsPage() {
                       </td>
                       <td className="px-6 py-3 text-right tabular-nums font-mono text-foreground">
                         {a.responseMs !== null ? `${a.responseMs}ms` : "—"}
+                      </td>
+                      <td className="px-6 py-3">
+                        {uptimeHistory[a.id] ? (
+                          <div className="w-24">
+                            <Sparkline data={uptimeHistory[a.id]} invert />
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted">—</span>
+                        )}
                       </td>
                       <td className="px-6 py-3 text-right tabular-nums text-foreground">
                         {a.uptime30d > 0 ? `${a.uptime30d.toFixed(2)}%` : "—"}
@@ -272,6 +283,109 @@ export default function AssetsPage() {
                 </li>
               ))}
             </ul>
+          </div>
+        </div>
+
+        {/* VPS resource monitor */}
+        <div className="bg-card border border-border rounded-xl p-6">
+          <div className="flex items-baseline justify-between gap-3 flex-wrap mb-4">
+            <div>
+              <h2 className="font-semibold text-lg text-foreground flex items-center gap-2">
+                <Server size={18} className="text-sentinel-cyan" />
+                n8n VPS — resource monitor
+              </h2>
+              <p className="text-xs text-muted font-mono mt-0.5">
+                {vpsMeta.host} · {vpsMeta.os} · up {vpsMeta.uptime} · load {vpsMeta.load}
+              </p>
+            </div>
+            <div className="text-xs text-muted font-mono">
+              {vpsMeta.n8nWorkflows} workflows · {formatNumber(vpsMeta.n8nExecutionsToday)} executions today
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {vpsResources.map((r) => {
+              const Icon = r.label === "CPU" ? Cpu : r.label === "Memory" ? MemoryStick : r.label === "Disk" ? HardDrive : Wifi;
+              const barColor = r.status === "critical" ? "bg-red-500" : r.status === "warning" ? "bg-amber-500" : "bg-sentinel-cyan";
+              const textColor = r.status === "critical" ? "text-red-500" : r.status === "warning" ? "text-amber-500" : "text-foreground";
+              return (
+                <div key={r.label} className="p-4 rounded-lg bg-background border border-border">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-muted flex items-center gap-1.5">
+                      <Icon size={14} /> {r.label}
+                    </span>
+                    <span className={cn("text-xs font-mono font-bold tabular-nums", textColor)}>{r.pct}%</span>
+                  </div>
+                  <div className="w-full bg-card rounded-full h-2 overflow-hidden mb-1.5">
+                    <div className={cn("h-full rounded-full transition-all", barColor)} style={{ width: `${r.pct}%` }} />
+                  </div>
+                  <div className="text-[11px] text-muted font-mono">
+                    {r.used} / {r.total} {r.unit}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* SSL certificate tracker */}
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-border">
+            <h2 className="font-semibold text-lg text-foreground flex items-center gap-2">
+              <Lock size={18} className="text-sentinel-cyan" />
+              SSL / TLS certificates
+            </h2>
+            <p className="text-xs text-muted">
+              {sslCerts.filter((c) => c.status === "valid").length} valid ·{" "}
+              {sslCerts.filter((c) => c.status === "expiring").length} expiring soon
+            </p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[680px]">
+              <thead className="bg-background text-muted text-xs uppercase tracking-wide">
+                <tr>
+                  <th className="text-left px-6 py-3 font-semibold">Domain</th>
+                  <th className="text-left px-6 py-3 font-semibold">Issuer</th>
+                  <th className="text-left px-6 py-3 font-semibold">Expires</th>
+                  <th className="text-right px-6 py-3 font-semibold">Days left</th>
+                  <th className="text-left px-6 py-3 font-semibold">Auto-renew</th>
+                  <th className="text-left px-6 py-3 font-semibold">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {sslCerts.map((c) => {
+                  const sevStyle = c.status === "expired"
+                    ? "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300"
+                    : c.status === "expiring"
+                      ? "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
+                      : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300";
+                  return (
+                    <tr key={c.domain} className="hover:bg-background/60">
+                      <td className="px-6 py-3 font-mono text-foreground flex items-center gap-2">
+                        <ShieldCheck size={13} className={c.status === "valid" ? "text-emerald-500" : "text-amber-500"} />
+                        {c.domain}
+                      </td>
+                      <td className="px-6 py-3 text-muted text-xs">{c.issuer}</td>
+                      <td className="px-6 py-3 text-foreground tabular-nums font-mono text-xs">{c.expiresAt}</td>
+                      <td className={cn("px-6 py-3 text-right tabular-nums font-bold", c.daysLeft <= 30 ? "text-amber-500" : "text-foreground")}>
+                        {c.daysLeft}
+                      </td>
+                      <td className="px-6 py-3 text-xs">
+                        {c.autoRenew ? (
+                          <span className="text-emerald-500 font-semibold">● armed</span>
+                        ) : (
+                          <span className="text-muted">manual</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-3">
+                        <span className={cn("text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full font-bold", sevStyle)}>
+                          {c.status}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       </main>

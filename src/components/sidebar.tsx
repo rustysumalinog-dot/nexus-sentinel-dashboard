@@ -11,8 +11,11 @@ import {
   Fingerprint,
   Menu,
   X,
+  Sparkles,
+  Command,
 } from "lucide-react";
 import { projectMeta, operator } from "@/lib/mock-data";
+import { useApp } from "@/lib/app-provider";
 import { cn } from "@/lib/utils";
 
 const nav = [
@@ -25,6 +28,7 @@ const nav = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { replayBoot } = useApp();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -111,6 +115,28 @@ export function Sidebar() {
               </Link>
             );
           })}
+
+          <div className="pt-3 mt-3 border-t border-slate-800 space-y-1">
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))}
+              className="w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm font-medium text-white/60 hover:bg-white/5 hover:text-white transition-colors"
+            >
+              <span className="flex items-center gap-3">
+                <Command size={16} />
+                Command Palette
+              </span>
+              <kbd className="text-[10px] font-mono text-white/40 border border-slate-700 rounded px-1">⌘K</kbd>
+            </button>
+            <button
+              type="button"
+              onClick={replayBoot}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-white/60 hover:bg-white/5 hover:text-white transition-colors"
+            >
+              <Sparkles size={16} />
+              Replay Boot
+            </button>
+          </div>
         </nav>
 
         <div className="px-4 py-4 border-t border-slate-800 text-xs">

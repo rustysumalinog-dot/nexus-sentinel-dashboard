@@ -1,10 +1,15 @@
 "use client";
 
+import { Command } from "lucide-react";
 import { operator } from "@/lib/mock-data";
 import { LiveClock } from "./live-clock";
 import { NotificationsDrawer } from "./notifications-drawer";
 import { SearchInput } from "./search-input";
 import { ThemeToggle } from "./theme-toggle";
+
+function openCommandPalette() {
+  window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }));
+}
 
 export function Topbar({ title, subtitle }: { title: string; subtitle?: string }) {
   const initials = operator.name
@@ -22,6 +27,16 @@ export function Topbar({ title, subtitle }: { title: string; subtitle?: string }
         {subtitle && <p className="text-xs sm:text-sm text-muted mt-0.5 truncate">{subtitle}</p>}
       </div>
       <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto">
+        <button
+          type="button"
+          onClick={openCommandPalette}
+          aria-label="Open command palette"
+          title="Command palette (⌘K)"
+          className="hidden sm:inline-flex items-center gap-2 px-2.5 py-2 rounded-lg border border-border hover:bg-background text-muted hover:text-foreground transition-colors"
+        >
+          <Command size={15} />
+          <kbd className="text-[10px] font-mono">⌘K</kbd>
+        </button>
         <SearchInput />
         <ThemeToggle />
         <NotificationsDrawer />

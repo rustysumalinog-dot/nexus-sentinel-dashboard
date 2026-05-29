@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { BootSplash } from "@/components/boot-splash";
+import { CommandPalette } from "@/components/command-palette";
 
 type Theme = "light" | "dark";
 
@@ -10,6 +11,7 @@ interface AppState {
   toggleTheme: () => void;
   search: string;
   setSearch: (v: string) => void;
+  replayBoot: () => void;
 }
 
 const AppContext = createContext<AppState | null>(null);
@@ -67,14 +69,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setShowBoot(false);
   }, []);
 
+  const replayBoot = useCallback(() => {
+    setShowBoot(true);
+  }, []);
+
   const value = useMemo<AppState>(
-    () => ({ theme, toggleTheme, search, setSearch }),
-    [theme, toggleTheme, search]
+    () => ({ theme, toggleTheme, search, setSearch, replayBoot }),
+    [theme, toggleTheme, search, replayBoot]
   );
 
   return (
     <AppContext.Provider value={value}>
       {showBoot && <BootSplash onDone={handleBootDone} />}
+      <CommandPalette />
       {children}
     </AppContext.Provider>
   );

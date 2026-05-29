@@ -5,6 +5,10 @@ import { Topbar } from "@/components/topbar";
 import { KpiCard } from "@/components/kpi-card";
 import { RevenueAreaChart } from "@/components/charts/sales-chart";
 import { HourlyBarChart } from "@/components/charts/traffic-chart";
+import { PostureGauge } from "@/components/charts/posture-gauge";
+import { SeverityDonut } from "@/components/charts/severity-donut";
+import { EventTicker } from "@/components/event-ticker";
+import { ThreatHeatStrip } from "@/components/threat-heat-strip";
 import {
   todayKPIs,
   weekVisitors,
@@ -12,6 +16,7 @@ import {
   assets,
   threats,
   projectMeta,
+  severityDistribution,
 } from "@/lib/mock-data";
 import { formatNumber, cn } from "@/lib/utils";
 import {
@@ -22,6 +27,14 @@ import {
   Activity,
   Radio,
 } from "lucide-react";
+
+const severityLegend: { key: string; label: string; light: string; dark: string }[] = [
+  { key: "critical", label: "Critical", light: "#dc2626", dark: "#ef4444" },
+  { key: "high", label: "High", light: "#ea580c", dark: "#fb923c" },
+  { key: "medium", label: "Medium", light: "#d97706", dark: "#f59e0b" },
+  { key: "low", label: "Low", light: "#0e7490", dark: "#06b6d4" },
+  { key: "info", label: "Info", light: "#64748b", dark: "#94a3b8" },
+];
 
 interface LiveResult {
   id: string;
@@ -84,10 +97,14 @@ export default function OverviewPage() {
         subtitle={`${projectMeta.codename} · ${projectMeta.region} · ${new Date().toLocaleDateString("en-PH", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}`}
       />
       <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6">
+        <EventTicker />
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <KpiCard
             label="Posture Score"
             value={`${todayKPIs.postureScore}/100`}
+            countTo={todayKPIs.postureScore}
+            format={(n) => `${Math.round(n)}/100`}
             delta={todayKPIs.postureDelta}
             hint="rolling 30d"
             icon={ShieldCheck}
@@ -95,6 +112,8 @@ export default function OverviewPage() {
           <KpiCard
             label="Visitors Today"
             value={formatNumber(todayKPIs.visitorsToday)}
+            countTo={todayKPIs.visitorsToday}
+            format={(n) => formatNumber(Math.round(n))}
             delta={todayKPIs.visitorsDeltaPct}
             hint="across all sites"
             icon={Users}
@@ -102,16 +121,72 @@ export default function OverviewPage() {
           <KpiCard
             label="Active Alerts"
             value={todayKPIs.activeAlerts.toString()}
+            countTo={todayKPIs.activeAlerts}
+            format={(n) => Math.round(n).toString()}
             hint={`${todayKPIs.criticalAlerts} critical`}
             icon={AlertOctagon}
+            alert={todayKPIs.criticalAlerts > 0}
           />
           <KpiCard
             label="Attacks Blocked"
             value={formatNumber(todayKPIs.blockedAttacks24h)}
+            countTo={todayKPIs.blockedAttacks24h}
+            format={(n) => formatNumber(Math.round(n))}
             delta={todayKPIs.blockedDeltaPct}
             hint="last 24h"
             icon={ShieldAlert}
           />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="bg-card border border-border rounded-xl p-6">
+            <h2 className="font-semibold text-lg text-foreground mb-1">Security posture</h2>
+            <p className="text-xs text-muted mb-2">Composite score · rolling 30d</p>
+            <PostureGauge score={todayKPIs.postureScore} />
+          </div>
+
+          <div className="bg-card border border-border rounded-xl p-6">
+            <h2 className="font-semibold text-lg text-foreground mb-1">Threat severity mix</h2>
+            <p className="text-xs text-muted mb-2">Last 24h events</p>
+            <SeverityDonut data={severityDistribution} />
+            <div className="flex flex-wrap gap-x-4 gap-y-1.5 justify-center mt-2">
+              {severityLegend.map((s) => {
+                const count = severityDistribution.find((d) => d.severity === s.key)?.count ?? 0;
+                if (count === 0) return null;
+                return (
+                  <span key={s.key} className="inline-flex items-center gap-1.5 text-xs text-muted">
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: s.light }} />
+                    {s.label} <span className="font-mono text-foreground">{count}</span>
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="bg-card border border-border rounded-xl p-6">
+            <div className="flex items-center gap-2 mb-1">
+              <Radio size={18} className="text-red-500" />
+              <h2 className="font-semibold text-lg text-foreground">High-severity feed</h2>
+            </div>
+            <p className="text-xs text-muted mb-4">Critical + high · last 24h</p>
+            <ul className="space-y-3">
+              {criticalThreats.slice(0, 4).map((t) => (
+                <li key={t.id} className="flex items-start gap-3">
+                  <div className={cn("w-1 self-stretch rounded-full", t.severity === "critical" ? "bg-red-500" : "bg-amber-500")} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline gap-2 mb-0.5">
+                      <span className={cn("text-[10px] uppercase tracking-wider font-bold font-mono", t.severity === "critical" ? "text-red-500" : "text-amber-500")}>
+                        {t.severity}
+                      </span>
+                      <span className="text-xs text-muted font-mono">{t.ts}</span>
+                    </div>
+                    <div className="text-sm font-medium text-foreground truncate">{t.category} · {t.asset}</div>
+                    <div className="text-xs text-muted truncate">{t.ip} · {t.country}</div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
 
         <div className="bg-card border border-border rounded-xl p-6">
@@ -185,42 +260,17 @@ export default function OverviewPage() {
           </div>
 
           <div className="bg-card border border-border rounded-xl p-6">
-            <div className="flex items-center gap-2 mb-1">
-              <Radio size={18} className="text-red-500" />
-              <h2 className="font-semibold text-lg text-foreground">High-severity events</h2>
-            </div>
-            <p className="text-xs text-muted mb-4">Last 24h · critical + high</p>
-            <ul className="space-y-3">
-              {criticalThreats.slice(0, 4).map((t) => (
-                <li key={t.id} className="flex items-start gap-3">
-                  <div className={cn(
-                    "w-1 self-stretch rounded-full",
-                    t.severity === "critical" ? "bg-red-500" : "bg-amber-500"
-                  )} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline gap-2 mb-0.5">
-                      <span className={cn(
-                        "text-[10px] uppercase tracking-wider font-bold font-mono",
-                        t.severity === "critical" ? "text-red-500" : "text-amber-500"
-                      )}>
-                        {t.severity}
-                      </span>
-                      <span className="text-xs text-muted font-mono">{t.ts}</span>
-                    </div>
-                    <div className="text-sm font-medium text-foreground truncate">{t.category} · {t.asset}</div>
-                    <div className="text-xs text-muted truncate">{t.ip} · {t.country}</div>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <h2 className="font-semibold text-lg text-foreground mb-1">Attacks blocked — 7d</h2>
+            <p className="text-xs text-muted mb-4">WAF + rate-limit + bot challenges</p>
+            <HourlyBarChart data={weekVisitors} xKey="day" yKey="attacksBlocked" yLabel="blocked" color="red" />
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 bg-card border border-border rounded-xl p-6">
-            <h2 className="font-semibold text-lg text-foreground mb-1">Attacks blocked — past 7 days</h2>
-            <p className="text-xs text-muted mb-4">WAF + rate-limit + bot challenges</p>
-            <HourlyBarChart data={weekVisitors} xKey="day" yKey="attacksBlocked" yLabel="blocked" color="red" />
+            <h2 className="font-semibold text-lg text-foreground mb-1">Threat activity by hour</h2>
+            <p className="text-xs text-muted mb-4">When attacks hit · UTC offset Asia/Manila</p>
+            <ThreatHeatStrip />
           </div>
 
           <div className="bg-card border border-border rounded-xl p-6">

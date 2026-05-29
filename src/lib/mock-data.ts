@@ -291,3 +291,102 @@ export const notificationSummary = {
   suspiciousForks: githubRepos.reduce((s, r) => s + r.suspiciousForks.length, 0),
   apiDegradations: apiUsage.filter((a) => a.status !== "operational").length,
 };
+
+// ─── Upgrade datasets ────────────────────────────────────────────────
+
+// Per-asset 24-point uptime/latency history for sparklines (response ms).
+export const uptimeHistory: Record<string, number[]> = {
+  "AST-001": [142, 138, 155, 149, 162, 158, 144, 151, 168, 159, 147, 153, 161, 156, 148, 152, 145, 158, 163, 150, 144, 157, 149, 146],
+  "AST-002": [88, 92, 95, 86, 91, 98, 102, 94, 89, 96, 99, 91, 87, 93, 100, 95, 90, 97, 92, 88, 94, 99, 91, 89],
+  "AST-003": [120, 128, 135, 142, 138, 130, 125, 133, 145, 139, 128, 136, 141, 134, 129, 137, 143, 138, 131, 127, 135, 140, 133, 130],
+  "AST-005": [178, 184, 192, 186, 198, 204, 188, 182, 196, 210, 184, 190, 202, 195, 187, 193, 199, 186, 181, 194, 200, 188, 185, 184],
+  "AST-006": [82, 88, 94, 90, 86, 92, 98, 91, 87, 93, 89, 95, 91, 88, 94, 90, 86, 92, 89, 93, 90, 87, 91, 92],
+  "AST-007": [232, 248, 256, 244, 238, 252, 268, 251, 242, 258, 264, 248, 240, 254, 261, 249, 243, 257, 250, 245, 252, 248, 246, 248],
+  "AST-008": [842, 1124, 1542, 1842, 1648, 1342, 1124, 1456, 1788, 1924, 1542, 1648, 1842, 1736, 1542, 1648, 1842, 1648, 1456, 1342, 1648, 1842, 1742, 1842],
+};
+
+export interface VpsResource {
+  label: string;
+  used: number;
+  total: number;
+  unit: string;
+  pct: number;
+  status: "ok" | "warning" | "critical";
+}
+
+export const vpsResources: VpsResource[] = [
+  { label: "CPU", used: 38, total: 100, unit: "%", pct: 38, status: "ok" },
+  { label: "Memory", used: 5.8, total: 8, unit: "GB", pct: 73, status: "warning" },
+  { label: "Disk", used: 42, total: 80, unit: "GB", pct: 53, status: "ok" },
+  { label: "Bandwidth", used: 184, total: 1000, unit: "GB", pct: 18, status: "ok" },
+];
+
+export const vpsMeta = {
+  host: "Hostinger VPS · SG",
+  os: "Ubuntu 22.04 LTS",
+  uptime: "47 days, 12h",
+  load: "0.42, 0.38, 0.31",
+  n8nWorkflows: 16,
+  n8nExecutionsToday: 482,
+};
+
+export interface SslCert {
+  domain: string;
+  issuer: string;
+  expiresAt: string;
+  daysLeft: number;
+  status: "valid" | "expiring" | "expired";
+  autoRenew: boolean;
+}
+
+export const sslCerts: SslCert[] = [
+  { domain: "dzong.vercel.app", issuer: "Let's Encrypt (Vercel)", expiresAt: "2026-08-12", daysLeft: 84, status: "valid", autoRenew: true },
+  { domain: "islaura.vercel.app", issuer: "Let's Encrypt (Vercel)", expiresAt: "2026-08-12", daysLeft: 84, status: "valid", autoRenew: true },
+  { domain: "islaura-resort.vercel.app", issuer: "Let's Encrypt (Vercel)", expiresAt: "2026-08-18", daysLeft: 90, status: "valid", autoRenew: true },
+  { domain: "rustysumalinog.onrender.com", issuer: "Let's Encrypt (Render)", expiresAt: "2026-07-04", daysLeft: 45, status: "valid", autoRenew: true },
+  { domain: "n8n.rustysumalinog.dev", issuer: "Let's Encrypt", expiresAt: "2026-06-09", daysLeft: 20, status: "expiring", autoRenew: true },
+  { domain: "rustysumalinog.dev", issuer: "Namecheap PositiveSSL", expiresAt: "2027-03-14", daysLeft: 657, status: "valid", autoRenew: false },
+];
+
+// Threat activity by hour (0-23) — count of events detected, for heatmap.
+export const threatsByHour: { hour: string; count: number }[] = [
+  { hour: "00", count: 18 }, { hour: "01", count: 24 }, { hour: "02", count: 42 },
+  { hour: "03", count: 58 }, { hour: "04", count: 36 }, { hour: "05", count: 22 },
+  { hour: "06", count: 14 }, { hour: "07", count: 11 }, { hour: "08", count: 19 },
+  { hour: "09", count: 28 }, { hour: "10", count: 34 }, { hour: "11", count: 48 },
+  { hour: "12", count: 31 }, { hour: "13", count: 26 }, { hour: "14", count: 22 },
+  { hour: "15", count: 29 }, { hour: "16", count: 38 }, { hour: "17", count: 44 },
+  { hour: "18", count: 33 }, { hour: "19", count: 27 }, { hour: "20", count: 41 },
+  { hour: "21", count: 52 }, { hour: "22", count: 46 }, { hour: "23", count: 28 },
+];
+
+// Severity distribution for donut chart.
+export const severityDistribution = (["critical", "high", "medium", "low", "info"] as const).map((sev) => ({
+  severity: sev,
+  count: threats.filter((t) => t.severity === sev).length,
+}));
+
+// Short event strings for the scrolling live ticker.
+export const tickerEvents: { text: string; level: "critical" | "warn" | "info" | "ok" }[] = [
+  { text: "CRITICAL · Credential stuffing blocked on n8n — 248 attempts from 185.220.101.42 (Tor)", level: "critical" },
+  { text: "IMPERSONATION · rustysumalinog.com registered (98% match to your .dev) — investigating", level: "critical" },
+  { text: "FORK · Verbatim copy of dzong-cafe-grill-dashboard by bot-account-x42 — no attribution", level: "warn" },
+  { text: "API · OpenAI fallback degraded (504) — auto-failover to Anthropic active", level: "warn" },
+  { text: "OK · dzong.vercel.app 200 · 146ms · TLS 1.3 verified", level: "ok" },
+  { text: "OK · islaura.vercel.app 200 · 89ms", level: "ok" },
+  { text: "BLOCKED · SQL injection probe on Dzong /search — typed queries, 0 impact", level: "info" },
+  { text: "GEO · SSH attempt from Sweden blocked by 2FA on GitHub org", level: "warn" },
+  { text: "DDoS · L7 flood on n8n /webhook (4.2K rpm) mitigated by Cloudflare WAF", level: "warn" },
+  { text: "OK · 412 attacks blocked in last 24h · posture score 87/100", level: "ok" },
+  { text: "SSL · n8n.rustysumalinog.dev cert expires in 20 days — auto-renew armed", level: "info" },
+];
+
+export const auditTrail: { ts: string; actor: string; action: string }[] = [
+  { ts: "11:48 AM", actor: "Sentinel WAF", action: "Auto-blocked IP 185.220.101.42 (credential stuffing)" },
+  { ts: "11:42 AM", actor: "Failover Engine", action: "Routed AI traffic OpenAI → Anthropic (504 detected)" },
+  { ts: "11:24 AM", actor: "Brand Monitor", action: "Flagged typosquat domain rustysumalinog.com" },
+  { ts: "10:48 AM", actor: "GitHub Watcher", action: "Detected suspicious fork by bot-account-x42" },
+  { ts: "09:14 AM", actor: "Rusty (Architect)", action: "Reviewed + acknowledged geo-anomaly EVT-7836" },
+  { ts: "08:48 AM", actor: "Cloudflare WAF", action: "Mitigated L7 DDoS on n8n /webhook endpoint" },
+  { ts: "06:00 AM", actor: "Sentinel Scheduler", action: "Daily backup verified — Supabase PITR snapshot OK" },
+];
